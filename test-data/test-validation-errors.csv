@@ -1,0 +1,4 @@
+CompanyName,Website
+DELETETEST_ValidCompany,deletetest-valid.fake
+,deletetest-missing-name.fake
+DELETETEST_AnotherValid,deletetest-another.fake

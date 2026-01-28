@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  width: 600px;
+  min-height: 400px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Table styles */
+.data-table {
+  @apply w-full text-sm border-collapse;
+}
+
+.data-table th {
+  @apply bg-gray-100 px-3 py-2 text-left font-medium text-gray-700 border-b border-gray-200 sticky top-0;
+}
+
+.data-table td {
+  @apply px-3 py-2 border-b border-gray-100;
+}
+
+.data-table tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Status colors */
+.status-valid {
+  @apply bg-green-50 border-l-4 border-l-green-500;
+}
+
+.status-warning {
+  @apply bg-yellow-50 border-l-4 border-l-yellow-500;
+}
+
+.status-error {
+  @apply bg-red-50 border-l-4 border-l-red-500;
+}
+
+.status-duplicate {
+  @apply bg-orange-50 border-l-4 border-l-orange-500;
+}
