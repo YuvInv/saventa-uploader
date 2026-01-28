@@ -69,6 +69,17 @@ CompanyName,URL,DescriptionShort,StageID,VerticalID,...
 "Company Name (required)","https://example.com","Short description","0=Screening, 1=Scheduling, 9=Portfolio",...
 ```
 
+### 4. Modify the extension to use Sidepanel UI (Low Priority)
+**Feature:** Change from popup UI to sidepanel UI for better user experience
+- Update manifest to define sidepanel
+- Refactor components to fit sidepanel layout
+
+**Files to modify:**
+- `manifest.json` - Change popup to sidepanel
+- `src/popup/*` - Move to `src/sidepanel/*` and adjust layout accordingly
+
+
+
 ---
 
 ## API Notes
