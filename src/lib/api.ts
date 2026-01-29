@@ -1,4 +1,4 @@
-import type { Schema, Deal, SchemaField } from './types';
+import type { Schema, ContactSchema, Deal, SchemaField } from './types';
 
 const BASE_URL = 'https://run.mydealflow.com/inv/api';
 
@@ -165,12 +165,50 @@ function mapFieldType(apiType?: string): SchemaField['type'] {
   }
 }
 
+export async function getContactSchema(): Promise<ContactSchema> {
+  const response = await apiRequest<RawSchemaResponse>('/schema/contacts');
+
+  console.log('Raw contact schema response:', response);
+
+  const dataObj = response.data || {};
+  const rawFields = Object.values(dataObj);
+
+  console.log('Raw contact fields count:', rawFields.length);
+
+  const fields: SchemaField[] = rawFields.map((field: RawSchemaField) => {
+    const fieldName = field.dbname || '';
+
+    let options: string[] | undefined;
+    if (field.optionlist && typeof field.optionlist === 'object') {
+      options = Object.entries(field.optionlist).map(([key]) => key);
+    }
+
+    return {
+      name: fieldName,
+      label: field.label || fieldName,
+      type: mapFieldType(field.type),
+      required: fieldName === 'Name', // Only Name is required for contacts
+      options,
+      optionlistFull: field.optionlist,
+    };
+  });
+
+  console.log('Parsed contact fields:', fields.length);
+
+  return {
+    fields,
+    fetchedAt: Date.now(),
+    rawResponse: response,
+  };
+}
+
 interface SearchResponse {
   status?: string;
   data?: Array<{
     CompanyID?: number;
     'Deal Name'?: string;
     Website?: string;
+    semantic_score?: number;
     [key: string]: unknown;
   }>;
   count_returned?: number;
@@ -191,6 +229,42 @@ export async function searchDeals(filter: string): Promise<Deal[]> {
     id: item.CompanyID?.toString(),
     CompanyName: item['Deal Name'] || '',
     Website: item.Website || undefined,
+    semanticScore: item.semantic_score,
+  }));
+}
+
+// Search deals using text search (_text= parameter)
+// This searches across all text fields and returns matching results
+export async function searchDealsByText(searchText: string): Promise<Deal[]> {
+  const encoded = encodeURIComponent(searchText);
+  const response = await apiRequest<SearchResponse>(
+    `/deal/list?_text=${encoded}&_x[]=CompanyName&_x[]=Website`
+  );
+
+  const rawData = response.data || [];
+
+  return rawData.map(item => ({
+    id: item.CompanyID?.toString(),
+    CompanyName: item['Deal Name'] || '',
+    Website: item.Website || undefined,
+  }));
+}
+
+// Semantic search for fuzzy matching (_ss= parameter)
+// Returns top 20 matches with semantic_score
+export async function searchDealsSemantically(searchText: string): Promise<Deal[]> {
+  const encoded = encodeURIComponent(searchText);
+  const response = await apiRequest<SearchResponse>(
+    `/deal/list?_ss=${encoded}&_x[]=CompanyName&_x[]=Website`
+  );
+
+  const rawData = response.data || [];
+
+  return rawData.map(item => ({
+    id: item.CompanyID?.toString(),
+    CompanyName: item['Deal Name'] || '',
+    Website: item.Website || undefined,
+    semanticScore: item.semantic_score,
   }));
 }
 
@@ -200,28 +274,39 @@ export async function checkDuplicate(
 ): Promise<{ isDuplicate: boolean; matches: Deal[] }> {
   const matches: Deal[] = [];
 
-  // Search by company name
+  // Search by company name using text search
   if (companyName) {
-    const nameFilter = `filter[CompanyName]=${encodeURIComponent(companyName)}`;
-    const nameResults = await searchDeals(nameFilter);
+    // Use _text= search which properly filters results
+    const nameResults = await searchDealsByText(companyName);
 
     // Filter client-side for exact match (case-insensitive)
-    // API may return partial matches or all records
     const exactMatches = nameResults.filter(
       deal => deal.CompanyName?.toLowerCase() === companyName.toLowerCase()
     );
-    matches.push(...exactMatches);
+
+    // If no exact matches, try semantic search for close matches
+    if (exactMatches.length === 0) {
+      const semanticResults = await searchDealsSemantically(companyName);
+      // Only include semantic matches with high confidence (score > 0.8)
+      const highConfidenceMatches = semanticResults.filter(
+        deal => deal.semanticScore && deal.semanticScore > 0.8 &&
+                deal.CompanyName?.toLowerCase() === companyName.toLowerCase()
+      );
+      matches.push(...highConfidenceMatches);
+    } else {
+      matches.push(...exactMatches);
+    }
   }
 
   // Search by website if provided
   if (website) {
-    const websiteFilter = `filter[URL]=${encodeURIComponent(website)}`;
-    const websiteResults = await searchDeals(websiteFilter);
+    // Use text search for website
+    const websiteResults = await searchDealsByText(website);
 
     // Filter client-side for exact match
-    const normalizedWebsite = website.toLowerCase().replace(/\/$/, '');
+    const normalizedWebsite = normalizeWebsite(website);
     const exactMatches = websiteResults.filter(deal => {
-      const dealWebsite = deal.Website?.toLowerCase().replace(/\/$/, '');
+      const dealWebsite = normalizeWebsite(deal.Website || '');
       return dealWebsite === normalizedWebsite;
     });
 
@@ -237,6 +322,15 @@ export async function checkDuplicate(
     isDuplicate: matches.length > 0,
     matches,
   };
+}
+
+// Normalize website for comparison (lowercase, remove protocol, trailing slash)
+function normalizeWebsite(url: string): string {
+  return url
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/$/, '');
 }
 
 interface CreateDealResponse {
@@ -301,11 +395,79 @@ export async function createDeal(
   }
 }
 
+interface CreateContactResponse {
+  status?: string;
+  error?: string;
+  id?: string;
+  ContactID?: number;
+  [key: string]: unknown;
+}
+
+export async function createContact(
+  data: Record<string, string>,
+  companyId: string
+): Promise<{ success: boolean; contactId?: string; error?: string }> {
+  try {
+    const formData = new URLSearchParams();
+
+    // Add the company link
+    formData.append('CompanyID', companyId);
+
+    // Add contact data
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined && value !== null && value !== '') {
+        formData.append(key, value);
+      }
+    }
+
+    const response = await fetch(`${BASE_URL}/contact/add`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+
+    const result = await response.json() as CreateContactResponse;
+
+    console.log('Create contact response:', result);
+
+    if (result.error) {
+      return {
+        success: false,
+        error: result.error,
+      };
+    }
+
+    if (result.status === 'ok' || result.ContactID || result.id) {
+      return {
+        success: true,
+        contactId: result.ContactID?.toString() || result.id,
+      };
+    }
+
+    return {
+      success: false,
+      error: 'Unknown response format',
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
 // Export for use in background service worker
 export const sevantaApi = {
   checkConnection,
   getSchema,
+  getContactSchema,
   searchDeals,
+  searchDealsByText,
+  searchDealsSemantically,
   checkDuplicate,
   createDeal,
+  createContact,
 };

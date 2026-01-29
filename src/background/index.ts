@@ -1,8 +1,9 @@
 import { sevantaApi } from '../lib/api';
-import type { MessageType, MessageResponse, Schema, Deal } from '../lib/types';
+import type { MessageType, MessageResponse, Schema, ContactSchema, Deal } from '../lib/types';
 
-// Cache schema in memory
+// Cache schemas in memory
 let cachedSchema: Schema | null = null;
+let cachedContactSchema: ContactSchema | null = null;
 
 // Handle messages from popup
 chrome.runtime.onMessage.addListener(
@@ -33,11 +34,17 @@ async function handleMessage(message: MessageType): Promise<MessageResponse> {
     case 'GET_SCHEMA':
       return handleGetSchema();
 
+    case 'GET_CONTACT_SCHEMA':
+      return handleGetContactSchema();
+
     case 'SEARCH_DEALS':
       return handleSearchDeals(message.filter);
 
     case 'CREATE_DEAL':
       return handleCreateDeal(message.data);
+
+    case 'CREATE_CONTACT':
+      return handleCreateContact(message.data, message.companyId);
 
     case 'CHECK_DUPLICATE':
       return handleCheckDuplicate(message.companyName, message.website);
@@ -92,6 +99,36 @@ async function handleGetSchema(): Promise<MessageResponse<Schema>> {
   }
 }
 
+async function handleGetContactSchema(): Promise<MessageResponse<ContactSchema>> {
+  try {
+    // Return cached contact schema if less than 1 hour old
+    if (cachedContactSchema && Date.now() - cachedContactSchema.fetchedAt < 3600000) {
+      return { success: true, data: cachedContactSchema };
+    }
+
+    // Try to get from chrome.storage first
+    const stored = await chrome.storage.local.get('contactSchema');
+    if (stored.contactSchema && Date.now() - stored.contactSchema.fetchedAt < 3600000) {
+      cachedContactSchema = stored.contactSchema;
+      return { success: true, data: cachedContactSchema! };
+    }
+
+    // Fetch fresh contact schema
+    const contactSchema = await sevantaApi.getContactSchema();
+    cachedContactSchema = contactSchema;
+
+    // Cache in storage
+    await chrome.storage.local.set({ contactSchema });
+
+    return { success: true, data: contactSchema };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch contact schema',
+    };
+  }
+}
+
 async function handleSearchDeals(filter: string): Promise<MessageResponse<Deal[]>> {
   try {
     const deals = await sevantaApi.searchDeals(filter);
@@ -121,6 +158,24 @@ async function handleCreateDeal(
   }
 }
 
+async function handleCreateContact(
+  data: Record<string, string>,
+  companyId: string
+): Promise<MessageResponse<{ contactId?: string }>> {
+  try {
+    const result = await sevantaApi.createContact(data, companyId);
+    if (result.success) {
+      return { success: true, data: { contactId: result.contactId } };
+    }
+    return { success: false, error: result.error };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Create contact failed',
+    };
+  }
+}
+
 async function handleCheckDuplicate(
   companyName: string,
   website?: string
@@ -139,8 +194,9 @@ async function handleCheckDuplicate(
 async function handleClearCache(): Promise<MessageResponse<boolean>> {
   try {
     cachedSchema = null;
-    await chrome.storage.local.remove('schema');
-    console.log('Schema cache cleared');
+    cachedContactSchema = null;
+    await chrome.storage.local.remove(['schema', 'contactSchema']);
+    console.log('Schema caches cleared');
     return { success: true, data: true };
   } catch (error) {
     return {
@@ -151,8 +207,15 @@ async function handleClearCache(): Promise<MessageResponse<boolean>> {
 }
 
 // Clear stale cache on startup to ensure fresh schema after rebuilds
-chrome.storage.local.remove('schema').then(() => {
-  console.log('Schema cache cleared on startup');
+chrome.storage.local.remove(['schema', 'contactSchema']).then(() => {
+  console.log('Schema caches cleared on startup');
+});
+
+// Open side panel when extension icon is clicked
+chrome.action.onClicked.addListener((tab) => {
+  if (tab.id) {
+    chrome.sidePanel.open({ tabId: tab.id });
+  }
 });
 
 // Log when service worker starts

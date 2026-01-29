@@ -15,10 +15,30 @@ export interface Schema {
   rawResponse?: unknown; // For debugging - stores the raw API response
 }
 
+// Contact schema follows same structure as deal schema
+export type ContactSchemaField = SchemaField;
+
+export interface ContactSchema {
+  fields: ContactSchemaField[];
+  fetchedAt: number;
+  rawResponse?: unknown;
+}
+
+export interface Contact {
+  id?: string;
+  Name: string;
+  Email?: string;
+  Phone?: string;
+  CompanyID?: string; // Link to deal
+  ContactTypeID?: string; // e.g., "MGT" for management, "SRC" for source
+  [key: string]: string | number | boolean | undefined;
+}
+
 export interface Deal {
   id?: string;
   CompanyName: string;
   Website?: string;
+  semanticScore?: number;
   [key: string]: string | number | boolean | undefined;
 }
 
@@ -30,6 +50,15 @@ export interface Company {
   uploadStatus: 'pending' | 'uploading' | 'success' | 'error';
   uploadError?: string;
   createdDealId?: string;
+  // Contact/Founder data
+  contactData?: Record<string, string>;
+  contactValidation?: ValidationResult;
+  createdContactId?: string;
+}
+
+export interface ContactColumnMapping {
+  csvColumn: string;
+  contactField: string | null;
 }
 
 export interface ValidationResult {
@@ -75,9 +104,11 @@ export interface UploadProgress {
 export type MessageType =
   | { type: 'CHECK_CONNECTION' }
   | { type: 'GET_SCHEMA' }
+  | { type: 'GET_CONTACT_SCHEMA' }
   | { type: 'CLEAR_CACHE' }
   | { type: 'SEARCH_DEALS'; filter: string }
   | { type: 'CREATE_DEAL'; data: Record<string, string> }
+  | { type: 'CREATE_CONTACT'; data: Record<string, string>; companyId: string }
   | { type: 'CHECK_DUPLICATE'; companyName: string; website?: string };
 
 export interface MessageResponse<T = unknown> {

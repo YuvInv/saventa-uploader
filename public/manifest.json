@@ -1,21 +1,25 @@
 {
   "manifest_version": 3,
   "name": "Saventa Uploader",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bulk upload companies to Sevanta Dealflow CRM",
   "permissions": [
-    "storage"
+    "storage",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://run.mydealflow.com/*"
   ],
   "action": {
-    "default_popup": "src/popup/index.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
-    }
+    },
+    "default_title": "Open Saventa Uploader"
+  },
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
   },
   "background": {
     "service_worker": "src/background/index.ts",

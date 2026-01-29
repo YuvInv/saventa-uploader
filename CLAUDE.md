@@ -10,20 +10,21 @@ Saventa Uploader is a Chrome Extension for bulk uploading companies to Sevanta D
 
 ## Architecture
 
-Chrome Extension (Manifest V3):
+Chrome Extension (Manifest V3) with Side Panel UI:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     CHROME EXTENSION                         │
 │                                                              │
 │  ┌─────────────────────┐      ┌───────────────────────────┐ │
-│  │   Popup UI          │      │  Background Service Worker│ │
+│  │   Side Panel UI     │      │  Background Service Worker│ │
 │  │   (React + TS)      │ ←──→ │  (API calls to Sevanta)   │ │
 │  │                     │      │                           │ │
 │  │  - CSV upload       │      │  - Fetch with credentials │ │
 │  │  - Data editor      │      │  - Rate limiting          │ │
 │  │  - Validation view  │      │  - Error handling         │ │
-│  │  - Upload progress  │      │                           │ │
+│  │  - Upload progress  │      │  - Opens side panel       │ │
+│  │  - Contact mapping  │      │                           │ │
 │  └─────────────────────┘      └───────────────────────────┘ │
 │                                          │                   │
 └──────────────────────────────────────────│───────────────────┘
@@ -49,7 +50,11 @@ Chrome Extension (Manifest V3):
 ```
 saventa-uploader/
 ├── src/
-│   ├── popup/              # Popup UI (React)
+│   ├── sidepanel/          # Side Panel UI entry point
+│   │   ├── index.html      # HTML entry
+│   │   ├── main.tsx        # React entry (uses popup/App)
+│   │   └── styles.css      # Side panel styles
+│   ├── popup/              # Shared UI components (React)
 │   │   ├── App.tsx         # Main app component
 │   │   ├── components/     # React components
 │   │   └── hooks/          # Custom React hooks
@@ -58,7 +63,7 @@ saventa-uploader/
 │   └── lib/                # Shared utilities
 │       ├── api.ts          # Sevanta API client
 │       ├── validation.ts   # Field validation
-│       ├── csv.ts          # CSV parsing
+│       ├── csv.ts          # CSV parsing & templates
 │       └── types.ts        # TypeScript types
 ├── public/
 │   ├── manifest.json       # Extension manifest
@@ -175,3 +180,8 @@ npm run build        # Build for production
 3. Enable "Developer mode"
 4. Click "Load unpacked"
 5. Select the `dist` folder
+6. Click the extension icon to open the side panel
+
+---
+
+See `TODO.md` for roadmap and next features.

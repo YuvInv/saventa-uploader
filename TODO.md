@@ -1,110 +1,79 @@
-# Saventa Uploader - Status & TODO
+# Saventa Uploader - TODO
 
-## Current Status (2026-01-28)
+## Completed
 
-### Working Features
-- Schema parsing from API (fixed stale cache issue)
-- Column mapping from CSV to CRM fields
-- **UPLOADING WORKS** - Successfully creates deals in Sevanta CRM
-  - Uses form-urlencoded format (not JSON)
-  - Sends data with field dbnames (CompanyName, URL, etc.)
-
-### Fixed Issues
-1. **Schema cache** - Added "Clear Cache & Refresh" button + auto-clear on startup
-2. **API response parsing** - Fixed to read `response.data` (not `response.deals`)
-3. **Create deal** - Changed from JSON to `application/x-www-form-urlencoded`
+- [x] **Duplicate Check** - Fixed using `_text=` and `_ss=` search parameters instead of broken `filter[]`
+- [x] **Contacts/Founders Upload** - CSV can include founder columns, contacts created and linked to deals
+- [x] **CSV Template Download** - Download button with field descriptions and optional contact fields
+- [x] **Side Panel UI** - Modern side panel interface instead of popup
 
 ---
 
-## TODO
+## Next Up
 
-### 1. Duplicate Check Enhancement (High Priority)
-**Problem:** The API filter doesn't work as expected. When searching for a specific company:
-- Request: `filter[CompanyName]=DELETETEST_FakeCompany_001`
-- Response: Returns ALL 8227 deals (paginated to 100)
+### 1. Simplified CSV Template (Priority: High)
+The CSV template currently includes ALL CRM fields. Simplify to only commonly used fields:
 
-**Current Workaround:** Client-side filtering of results for exact match
-
-**Potential Solutions:**
-- Investigate correct API filter syntax (maybe `filter[CompanyName][eq]=` or `filter[CompanyName][like]=`)
-- Check if there's a search endpoint that works better
-- Consider using a different API parameter for exact matching
-- If API doesn't support filtering, implement smarter pagination to search through results
-
-**File:** `src/lib/api.ts` - `checkDuplicate()` and `searchDeals()` functions
-
-### 2. Add Contacts/Founders Upload (Medium Priority)
-**Feature:** Allow uploading contacts (company founders) alongside deals from the same CSV
-
-**API Endpoint:** `POST /contact/add`
-- Required field: `Name`
-- Link to deal: Include `CompanyID` (the deal's ID) and optionally `ContactTypeID` (e.g., "MGT" for management, "SRC" for source)
+**Fields to include:**
+- `CompanyName` (Deal Name) - required
+- `Description`
+- `Website`
+- `SourceTypeID` (Source Type)
+- `SourceNotes`
+- `PastInvestments`
+- Contact: `Name`, `Email`, `Phone`, `Title`
 
 **Implementation:**
-- Add contact columns to CSV (e.g., `FounderName`, `FounderEmail`, `FounderLinkedIn`)
-- After creating deal, use returned `CompanyID` to create linked contact
-- Schema endpoint: `GET /schema/contacts` for contact field definitions
-
-**Files to modify:**
-- `src/lib/types.ts` - Add Contact types
-- `src/lib/api.ts` - Add `createContact()` function
-- `src/popup/components/ColumnMapper.tsx` - Support contact field mapping
-
-### 3. CSV Template Download (Medium Priority)
-**Feature:** Add button to download a CSV template with all available CRM fields
-
-**Implementation:**
-- Add "Download CSV Template" button in `CsvUpload.tsx` component
-- Generate CSV with headers from schema fields (use `field.name` or `field.label`)
-- Include a sample row with field descriptions or example values
-- Use browser download API (create blob, trigger download)
-
-**Files to modify:**
-- `src/popup/components/CsvUpload.tsx` - Add download button
-- Could create helper in `src/lib/csv.ts` - `generateTemplate(schema)`
-
-**Example output:**
-```csv
-CompanyName,URL,DescriptionShort,StageID,VerticalID,...
-"Company Name (required)","https://example.com","Short description","0=Screening, 1=Scheduling, 9=Portfolio",...
-```
-
-### 4. Modify the extension to use Sidepanel UI (Low Priority)
-**Feature:** Change from popup UI to sidepanel UI for better user experience
-- Update manifest to define sidepanel
-- Refactor components to fit sidepanel layout
-
-**Files to modify:**
-- `manifest.json` - Change popup to sidepanel
-- `src/popup/*` - Move to `src/sidepanel/*` and adjust layout accordingly
-
-
+- Add `TEMPLATE_FIELDS` constant in `src/lib/csv.ts`
+- Toggle between "Simple" and "Full" template in UI
 
 ---
 
-## API Notes
+### 2. Dealigence Integration (Priority: Medium)
+Import companies directly from Dealigence platform.
 
-### Endpoints
-- `GET /schema/deals` - Returns field definitions (object keyed by field name)
-- `GET /deal/list?filter[Field]=value&_x[]=Field` - List/search deals
-- `POST /deal/add` - Create deal (form-urlencoded, not JSON)
+**Approach:**
+- Content script for `https://app.dealigence.com/*`
+- "Send to Sevanta" button on company pages
+- Extract: company name, description, website, founders
+- Send to side panel for review before upload
 
-### Field Naming
-- Schema returns `dbname` (e.g., "CompanyName") and `label` (e.g., "Deal Name")
-- List endpoint returns data with LABELS as keys (e.g., `"Deal Name": "Acme"`)
-- Create endpoint accepts DBNAMES (e.g., `CompanyName=Acme`)
+**Files to create:**
+- `src/content/dealigence.ts` - Content script
+- `src/lib/extractors/dealigence.ts` - Data extraction
+- Update `manifest.json` - Add content script config
 
-### Response Format
-```javascript
-// Schema
-{ status: "ok", data: { CompanyName: { dbname, label, type, optionlist }, ... } }
+---
 
-// List
-{ status: "ok", data: [...], count_returned: 100, count_total: 8227 }
+### 3. IVC Integration (Priority: Medium)
+Import companies directly from IVC (Israel Venture Capital) database.
 
-// Create (success)
-{ status: "ok", CompanyID: 123 }
+**Approach:**
+- Content script for `https://www.ivc-online.com/*`
+- "Send to Sevanta" button on company profiles
+- Map IVC fields to Sevanta CRM fields
 
-// Create (error)
-{ error: "Error: Deal Name cannot be blank." }
-```
+**Files to create:**
+- `src/content/ivc.ts` - Content script
+- `src/lib/extractors/ivc.ts` - Data extraction
+- Update `manifest.json` - Add content script config
+
+**Notes for both integrations:**
+- User must be logged into target platform
+- Need to analyze DOM structure of target pages
+- Handle gracefully if page structure changes
+
+---
+
+## Field Reference (Commonly Used)
+
+| DB Name | Label | Type |
+|---------|-------|------|
+| `CompanyName` | Deal Name | string (required) |
+| `Description` | Description | textarea |
+| `Website` | Website | url |
+| `SourceTypeID` | Source Type | dropdown |
+| `SourceNotes` | Source Notes | textarea |
+| `PastInvestments` | Past Investments | textarea |
+| `StageID` | Stage | dropdown |
+| `SectorID` | Sector | dropdown |

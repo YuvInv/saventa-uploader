@@ -11,8 +11,8 @@ import { UploadPreview } from './components/UploadPreview';
 import { useSevantaApi } from './hooks/useSevantaApi';
 import { useValidation } from './hooks/useValidation';
 import { useDuplicateCheck } from './hooks/useDuplicateCheck';
-import { parseCsv, autoMapColumns, applyMapping } from '../lib/csv';
-import type { Company, ColumnMapping, UploadProgress as UploadProgressType } from '../lib/types';
+import { parseCsv, autoMapColumns, applyMapping, autoMapContactColumns, applyContactMapping } from '../lib/csv';
+import type { Company, ColumnMapping, ContactColumnMapping, UploadProgress as UploadProgressType } from '../lib/types';
 
 type Step = 'upload' | 'map' | 'review' | 'preview' | 'uploading' | 'complete' | 'schema';
 
@@ -23,8 +23,9 @@ export default function App() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [selectedCompanyId, setSelectedCompanyId] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgressType | null>(null);
+  const [contactColumnMappings, setContactColumnMappings] = useState<ContactColumnMapping[]>([]);
 
-  const { connected, loading: connectionLoading, schema, error: connectionError, refreshConnection, clearCache } = useSevantaApi();
+  const { connected, loading: connectionLoading, schema, contactSchema, error: connectionError, refreshConnection, clearCache } = useSevantaApi();
   const { validateCompanies } = useValidation(schema);
   const { checkDuplicates } = useDuplicateCheck();
 
@@ -42,6 +43,12 @@ export default function App() {
       setColumnMappings(mappings);
     }
 
+    // Auto-map contact columns if contact schema is available
+    if (contactSchema) {
+      const contactMappings = autoMapContactColumns(parsed.headers, contactSchema.fields);
+      setContactColumnMappings(contactMappings);
+    }
+
     setStep('map');
   };
 
@@ -51,13 +58,24 @@ export default function App() {
 
     const mappedData = applyMapping(csvData.rows, columnMappings);
 
+    // Apply contact mapping if any contact columns are mapped
+    const contactData = contactColumnMappings.length > 0
+      ? applyContactMapping(csvData.rows, contactColumnMappings)
+      : csvData.rows.map(() => ({}));
+
     // Create company objects with validation
-    const newCompanies: Company[] = mappedData.map((data, index) => ({
-      id: `company-${index}-${Date.now()}`,
-      data,
-      validation: { valid: true, errors: [], warnings: [] },
-      uploadStatus: 'pending' as const,
-    }));
+    const newCompanies: Company[] = mappedData.map((data, index) => {
+      const contact = contactData[index] as Record<string, string>;
+      const hasContactName = contact && contact.Name;
+      return {
+        id: `company-${index}-${Date.now()}`,
+        data,
+        validation: { valid: true, errors: [], warnings: [] },
+        uploadStatus: 'pending' as const,
+        // Add contact data if there's a Name field
+        contactData: hasContactName ? contact : undefined,
+      };
+    });
 
     // Validate all companies
     const validated = validateCompanies(newCompanies);
@@ -136,10 +154,33 @@ export default function App() {
         console.log('Upload response:', response);
 
         if (response.success) {
+          const dealId = response.data?.dealId;
+
+          // Create contact if we have contact data and a deal ID
+          let createdContactId: string | undefined;
+          if (dealId && company.contactData && company.contactData.Name) {
+            console.log('Creating contact for deal:', dealId, company.contactData);
+            try {
+              const contactResponse = await chrome.runtime.sendMessage({
+                type: 'CREATE_CONTACT',
+                data: company.contactData,
+                companyId: dealId,
+              });
+              console.log('Contact response:', contactResponse);
+              if (contactResponse.success) {
+                createdContactId = contactResponse.data?.contactId;
+              } else {
+                console.warn('Failed to create contact:', contactResponse.error);
+              }
+            } catch (contactError) {
+              console.error('Contact creation error:', contactError);
+            }
+          }
+
           setCompanies(prev =>
             prev.map(c =>
               c.id === company.id
-                ? { ...c, uploadStatus: 'success' as const, createdDealId: response.data?.dealId }
+                ? { ...c, uploadStatus: 'success' as const, createdDealId: dealId, createdContactId }
                 : c
             )
           );
@@ -181,6 +222,7 @@ export default function App() {
   const handleReset = () => {
     setCsvData(null);
     setColumnMappings([]);
+    setContactColumnMappings([]);
     setCompanies([]);
     setSelectedCompanyId(null);
     setUploadProgress(null);
@@ -193,32 +235,66 @@ export default function App() {
   const duplicateCount = companies.filter(c => c.duplicate?.isDuplicate).length;
 
   return (
-    <div className="p-4">
-      <header className="mb-4 pb-3 border-b border-gray-200">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-gray-800">Saventa Uploader</h1>
-          {connected && schema && step !== 'schema' && (
-            <button
-              onClick={() => setStep('schema')}
-              className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
-            >
-              Inspect Schema (Read-Only)
-            </button>
-          )}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </div>
+              <h1 className="text-lg font-semibold text-gray-800">Saventa Uploader</h1>
+            </div>
+            {connected && schema && step !== 'schema' && (
+              <button
+                onClick={() => setStep('schema')}
+                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
+              >
+                View Schema
+              </button>
+            )}
+          </div>
+          <div className="mt-2">
+            <ConnectionStatus
+              connected={connected}
+              loading={connectionLoading}
+              error={connectionError}
+              onRetry={refreshConnection}
+            />
+          </div>
         </div>
-        <ConnectionStatus
-          connected={connected}
-          loading={connectionLoading}
-          error={connectionError}
-          onRetry={refreshConnection}
-        />
       </header>
 
+      {/* Main Content */}
+      <main className="p-4">
+
       {!connected && !connectionLoading && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <p className="text-yellow-800 text-sm">
-            Please log into <a href="https://run.mydealflow.com" target="_blank" rel="noopener noreferrer" className="underline">Sevanta Dealflow</a> first, then reopen this extension.
-          </p>
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-5 mb-4">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="font-medium text-yellow-800 mb-1">Not Connected</h3>
+              <p className="text-yellow-700 text-sm">
+                Please log into{' '}
+                <a
+                  href="https://run.mydealflow.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium underline hover:text-yellow-900"
+                >
+                  Sevanta Dealflow
+                </a>{' '}
+                first, then click retry.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
@@ -233,7 +309,11 @@ export default function App() {
 
       {/* Upload Step */}
       {connected && step === 'upload' && (
-        <CsvUpload onUpload={handleCsvUpload} />
+        <CsvUpload
+          onUpload={handleCsvUpload}
+          schemaFields={schema?.fields}
+          contactSchemaFields={contactSchema?.fields}
+        />
       )}
 
       {/* Column Mapping Step */}
@@ -245,6 +325,9 @@ export default function App() {
           onMappingChange={setColumnMappings}
           onConfirm={handleMappingConfirm}
           onBack={() => setStep('upload')}
+          contactSchemaFields={contactSchema?.fields}
+          contactMappings={contactColumnMappings}
+          onContactMappingChange={setContactColumnMappings}
         />
       )}
 
@@ -314,6 +397,7 @@ export default function App() {
       {connected && step === 'uploading' && uploadProgress && (
         <UploadProgress progress={uploadProgress} />
       )}
+      </main>
     </div>
   );
 }
