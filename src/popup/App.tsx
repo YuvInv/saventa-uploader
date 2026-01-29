@@ -6,15 +6,14 @@ import { CompanyTable } from './components/CompanyTable';
 import { CompanyEditor } from './components/CompanyEditor';
 import { ValidationPanel } from './components/ValidationPanel';
 import { UploadProgress } from './components/UploadProgress';
-import { SchemaInspector } from './components/SchemaInspector';
 import { UploadPreview } from './components/UploadPreview';
 import { useSevantaApi } from './hooks/useSevantaApi';
 import { useValidation } from './hooks/useValidation';
 import { useDuplicateCheck } from './hooks/useDuplicateCheck';
-import { parseCsv, autoMapColumns, applyMapping, autoMapContactColumns, applyContactMapping } from '../lib/csv';
+import { parseCsv, autoMapColumns, applyMapping, autoMapContactColumns, applyContactMapping, isContactColumn } from '../lib/csv';
 import type { Company, ColumnMapping, ContactColumnMapping, UploadProgress as UploadProgressType } from '../lib/types';
 
-type Step = 'upload' | 'map' | 'review' | 'preview' | 'uploading' | 'complete' | 'schema';
+type Step = 'upload' | 'map' | 'review' | 'preview' | 'uploading' | 'complete';
 
 export default function App() {
   const [step, setStep] = useState<Step>('upload');
@@ -25,7 +24,7 @@ export default function App() {
   const [uploadProgress, setUploadProgress] = useState<UploadProgressType | null>(null);
   const [contactColumnMappings, setContactColumnMappings] = useState<ContactColumnMapping[]>([]);
 
-  const { connected, loading: connectionLoading, schema, contactSchema, error: connectionError, refreshConnection, clearCache } = useSevantaApi();
+  const { connected, loading: connectionLoading, schema, contactSchema, error: connectionError, refreshConnection } = useSevantaApi();
   const { validateCompanies } = useValidation(schema);
   const { checkDuplicates } = useDuplicateCheck();
 
@@ -37,15 +36,24 @@ export default function App() {
     }
     setCsvData({ headers: parsed.headers, rows: parsed.rows });
 
-    // Auto-map columns if schema is available
+    // Separate headers into deal columns vs contact columns
+    const contactHeaders = parsed.headers.filter(h => isContactColumn(h));
+    const dealHeaders = parsed.headers.filter(h => !isContactColumn(h));
+
+    // Auto-map deal columns (only non-contact columns)
     if (schema) {
-      const mappings = autoMapColumns(parsed.headers, schema.fields);
-      setColumnMappings(mappings);
+      const mappings = autoMapColumns(dealHeaders, schema.fields);
+      // Add contact columns as unmapped (they'll appear in the unified UI)
+      const contactColumnsAsDealMappings = contactHeaders.map(h => ({
+        csvColumn: h,
+        crmField: null, // These are contact columns, not deal fields
+      }));
+      setColumnMappings([...mappings, ...contactColumnsAsDealMappings]);
     }
 
-    // Auto-map contact columns if contact schema is available
+    // Auto-map contact columns
     if (contactSchema) {
-      const contactMappings = autoMapContactColumns(parsed.headers, contactSchema.fields);
+      const contactMappings = autoMapContactColumns(contactHeaders, contactSchema.fields);
       setContactColumnMappings(contactMappings);
     }
 
@@ -248,14 +256,6 @@ export default function App() {
               </div>
               <h1 className="text-lg font-semibold text-gray-800">Saventa Uploader</h1>
             </div>
-            {connected && schema && step !== 'schema' && (
-              <button
-                onClick={() => setStep('schema')}
-                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100 transition-colors"
-              >
-                View Schema
-              </button>
-            )}
           </div>
           <div className="mt-2">
             <ConnectionStatus
@@ -296,15 +296,6 @@ export default function App() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Schema Inspector (Read-Only Mode) */}
-      {connected && step === 'schema' && schema && (
-        <SchemaInspector
-          schema={schema}
-          onClose={() => setStep('upload')}
-          onClearCache={clearCache}
-        />
       )}
 
       {/* Upload Step */}

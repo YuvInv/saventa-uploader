@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "WebSearch",
-      "WebFetch(domain:mydealflow.com)"
+      "WebFetch(domain:mydealflow.com)",
+      "Bash(npm run build:*)"
     ]
   }
 }

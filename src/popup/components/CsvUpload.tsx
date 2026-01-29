@@ -12,7 +12,8 @@ export function CsvUpload({ onUpload, schemaFields, contactSchemaFields }: CsvUp
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [includeDescriptions, setIncludeDescriptions] = useState(true);
-  const [includeContacts, setIncludeContacts] = useState(false);
+  const [includeContacts, setIncludeContacts] = useState(true);
+  const [simpleTemplate, setSimpleTemplate] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: DragEvent) => {
@@ -69,7 +70,8 @@ export function CsvUpload({ onUpload, schemaFields, contactSchemaFields }: CsvUp
       includeDescriptionRow: includeDescriptions,
       includeContactFields: includeContacts,
       contactSchemaFields: contactSchemaFields,
-    });
+      simple: simpleTemplate,
+    }, simpleTemplate ? 'sevanta-simple-template.csv' : 'sevanta-full-template.csv');
   };
 
   return (
@@ -175,8 +177,35 @@ export function CsvUpload({ onUpload, schemaFields, contactSchemaFields }: CsvUp
             </svg>
             Download Template
           </h3>
+
+          {/* Template Type Toggle */}
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setSimpleTemplate(true)}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                simpleTemplate
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Simple
+            </button>
+            <button
+              onClick={() => setSimpleTemplate(false)}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                !simpleTemplate
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              Full
+            </button>
+          </div>
+
           <p className="text-sm text-gray-600 mb-4">
-            Get a CSV template with all CRM field names as headers.
+            {simpleTemplate
+              ? 'Common fields: CompanyName, Description, Website, Source, and Contact info.'
+              : 'All CRM fields included in the template.'}
           </p>
 
           <div className="space-y-3 mb-4">
@@ -209,7 +238,7 @@ export function CsvUpload({ onUpload, schemaFields, contactSchemaFields }: CsvUp
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
-            Download CSV Template
+            Download {simpleTemplate ? 'Simple' : 'Full'} Template
           </button>
         </div>
       )}

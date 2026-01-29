@@ -8,35 +8,6 @@ Saventa Uploader is a Chrome Extension for bulk uploading companies to Sevanta D
 
 **Key Benefit**: Uses browser session cookies for authentication - no API key needed.
 
-## Architecture
-
-Chrome Extension (Manifest V3) with Side Panel UI:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     CHROME EXTENSION                         │
-│                                                              │
-│  ┌─────────────────────┐      ┌───────────────────────────┐ │
-│  │   Side Panel UI     │      │  Background Service Worker│ │
-│  │   (React + TS)      │ ←──→ │  (API calls to Sevanta)   │ │
-│  │                     │      │                           │ │
-│  │  - CSV upload       │      │  - Fetch with credentials │ │
-│  │  - Data editor      │      │  - Rate limiting          │ │
-│  │  - Validation view  │      │  - Error handling         │ │
-│  │  - Upload progress  │      │  - Opens side panel       │ │
-│  │  - Contact mapping  │      │                           │ │
-│  └─────────────────────┘      └───────────────────────────┘ │
-│                                          │                   │
-└──────────────────────────────────────────│───────────────────┘
-                                           │
-                                           ▼
-                        ┌──────────────────────────────────┐
-                        │   Sevanta Dealflow API           │
-                        │   run.mydealflow.com/inv/api     │
-                        │   (authenticated via cookies)    │
-                        └──────────────────────────────────┘
-```
-
 ## Tech Stack
 
 - Vite + CRXJS (Chrome Extension bundling)
@@ -182,6 +153,13 @@ npm run build        # Build for production
 5. Select the `dist` folder
 6. Click the extension icon to open the side panel
 
----
+## Task Management
 
-See `TODO.md` for roadmap and next features.
+All tasks, features, and roadmap items are tracked in **two places**:
+- `TODO.md` - Local reference in the repo
+- [GitHub Issues](https://github.com/YuvInv/saventa-uploader/issues) - For tracking and collaboration
+
+When adding new tasks, update both locations to keep them in sync.
+
+# api examples
+the folder .schema_examples/ contains example JSON responses from various API endpoints for reference when working with the Sevanta Dealflow API. you can use these files to understand the structure of API responses and to test your code against real data formats.

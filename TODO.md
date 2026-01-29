@@ -1,5 +1,7 @@
 # Saventa Uploader - TODO
 
+> All tasks are tracked in [GitHub Issues](https://github.com/YuvInv/saventa-uploader/issues)
+
 ## Completed
 
 - [x] **Duplicate Check** - Fixed using `_text=` and `_ss=` search parameters instead of broken `filter[]`
@@ -11,7 +13,12 @@
 
 ## Next Up
 
-### 1. Simplified CSV Template (Priority: High)
+### 1. Remove 'View Schema' Option ([#7](https://github.com/YuvInv/saventa-uploader/issues/7)) - Priority: Quick Fix
+Remove debug feature from production UI.
+
+---
+
+### 2. Simplified CSV Template ([#1](https://github.com/YuvInv/saventa-uploader/issues/1)) - Priority: High
 The CSV template currently includes ALL CRM fields. Simplify to only commonly used fields:
 
 **Fields to include:**
@@ -29,7 +36,7 @@ The CSV template currently includes ALL CRM fields. Simplify to only commonly us
 
 ---
 
-### 2. Dealigence Integration (Priority: Medium)
+### 3. Dealigence Integration ([#2](https://github.com/YuvInv/saventa-uploader/issues/2)) - Priority: Medium
 Import companies directly from Dealigence platform.
 
 **Approach:**
@@ -45,7 +52,7 @@ Import companies directly from Dealigence platform.
 
 ---
 
-### 3. IVC Integration (Priority: Medium)
+### 4. IVC Integration ([#3](https://github.com/YuvInv/saventa-uploader/issues/3)) - Priority: Medium
 Import companies directly from IVC (Israel Venture Capital) database.
 
 **Approach:**
@@ -58,12 +65,40 @@ Import companies directly from IVC (Israel Venture Capital) database.
 - `src/lib/extractors/ivc.ts` - Data extraction
 - Update `manifest.json` - Add content script config
 
-**Notes for both integrations:**
+**Notes for Dealigence & IVC integrations:**
 - User must be logged into target platform
 - Need to analyze DOM structure of target pages
 - Handle gracefully if page structure changes
 
 ---
+
+### 5. GitHub CI/CD for Build & Publish ([#4](https://github.com/YuvInv/saventa-uploader/issues/4)) - Priority: Low
+Set up GitHub Actions to automatically build and publish the extension.
+
+---
+
+### 6. Auto-Updates from News ([#5](https://github.com/YuvInv/saventa-uploader/issues/5)) - Priority: Low
+Automatically crawl news sites (Ctech, Geektime) to:
+- Update existing companies with new funding rounds
+- Add new companies with AI-generated summaries
+- Match screening meeting summary format
+
+---
+
+### 7. AI Features: Company Enrichment ([#6](https://github.com/YuvInv/saventa-uploader/issues/6)) - Priority: Low
+Integrate with Perplexity (or similar) for:
+- Auto-enrichment of company profiles (funding, founders, history)
+- AI-driven CRM updates for outdated/missing data
+- User-controlled review and acceptance of changes
+
+---
+
+### 8. Additional Enhancements - Priority: Low
+- Progress bar during CSV upload
+- Error handling improvements
+- Changing extension icon to our VC logo
+
+
 
 ## Field Reference (Commonly Used)
 

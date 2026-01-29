@@ -1,6 +1,34 @@
 import Papa from 'papaparse';
 import type { ColumnMapping, ContactColumnMapping, SchemaField } from './types';
 
+// Simple template field definitions (hardcoded for consistency)
+export const SIMPLE_TEMPLATE_FIELDS: Array<{ name: string; label: string; required?: boolean }> = [
+  { name: 'CompanyName', label: 'Deal Name', required: true },
+  { name: 'Description', label: 'Description' },
+  { name: 'Website', label: 'Website' },
+  { name: 'SourceTypeID', label: 'Source Type' },
+  { name: 'SourceNotes', label: 'Source Notes' },
+  { name: 'PastInvestments', label: 'Past Investments' },
+];
+
+// Contact fields for simple template
+export const SIMPLE_CONTACT_FIELDS: Array<{ name: string; label: string; required?: boolean }> = [
+  { name: 'Name', label: 'Contact Name' },
+  { name: 'Email', label: 'Email' },
+  { name: 'Phone', label: 'Phone' },
+  { name: 'Title', label: 'Title' },
+];
+
+// Deal field aliases for common field name mismatches
+const DEAL_ALIASES: Record<string, string[]> = {
+  CompanyName: ['companyname', 'dealname', 'company', 'name', 'deal'],
+  Description: ['description', 'desc', 'summary', 'about'],
+  Website: ['website', 'url', 'site', 'web', 'homepage'],
+  PastInvestments: ['pastinvestments', 'investments', 'priorinvestments', 'previousinvestments', 'fundinground', 'funding'],
+  SourceTypeID: ['sourcetypeid', 'sourcetype', 'source', 'leadsource'],
+  SourceNotes: ['sourcenotes', 'sourcedetails', 'sourcedescription'],
+};
+
 export interface ParsedCsv {
   headers: string[];
   rows: Record<string, string>[];
@@ -43,6 +71,16 @@ export function autoMapColumns(
            normalizeFieldName(f.label) === normalizedCsvColumn
     );
 
+    // Try deal aliases for common field name mismatches
+    if (!matchedField) {
+      for (const [fieldName, aliases] of Object.entries(DEAL_ALIASES)) {
+        if (aliases.some(alias => normalizedCsvColumn === alias || alias === normalizedCsvColumn)) {
+          matchedField = schemaFields.find(f => f.name === fieldName);
+          if (matchedField) break;
+        }
+      }
+    }
+
     // Try partial match
     if (!matchedField) {
       matchedField = schemaFields.find(f => {
@@ -71,12 +109,43 @@ function normalizeFieldName(name: string): string {
 
 // Common aliases for contact fields
 const CONTACT_ALIASES: Record<string, string[]> = {
-  Name: ['founder', 'foundername', 'contactname', 'ceoname', 'ceo', 'contact', 'person', 'foundercontact'],
-  Email: ['founderemail', 'contactemail', 'ceoemail', 'email', 'emailaddress'],
-  Phone: ['founderphone', 'contactphone', 'ceophone', 'phone', 'phonenumber', 'mobile', 'cell'],
-  Title: ['foundertitle', 'contacttitle', 'jobtitle', 'position', 'role'],
-  LinkedIn: ['founderlinkedin', 'contactlinkedin', 'linkedinurl', 'linkedin'],
+  Name: ['name', 'founder', 'foundername', 'contactname', 'ceoname', 'ceo', 'contact', 'person', 'foundercontact'],
+  Email: ['email', 'founderemail', 'contactemail', 'ceoemail', 'emailaddress'],
+  Phone: ['phone', 'founderphone', 'contactphone', 'ceophone', 'phonenumber', 'mobile', 'cell'],
+  Title: ['title', 'foundertitle', 'contacttitle', 'jobtitle', 'position', 'role'],
+  LinkedIn: ['linkedin', 'founderlinkedin', 'contactlinkedin', 'linkedinurl'],
 };
+
+// Exclusive contact keywords that clearly indicate a contact column (not generic fields)
+const EXCLUSIVE_CONTACT_KEYWORDS = [
+  'founder', 'foundername', 'founderphone', 'founderemail', 'foundertitle', 'founderlinkedin',
+  'contactname', 'contactphone', 'contactemail', 'contacttitle', 'contactlinkedin',
+  'ceoname', 'ceophone', 'ceoemail',
+];
+
+// Check if a CSV column is a contact column (has Contact_ prefix or matches exclusive contact patterns)
+export function isContactColumn(csvColumn: string): boolean {
+  const normalized = normalizeFieldName(csvColumn);
+
+  // Check for Contact_ prefix (case-insensitive) - must have something after "contact"
+  // This matches "Contact_Name", "ContactName", but NOT just "Contact" or "CompanyName"
+  if (normalized.startsWith('contact') && normalized.length > 7) {
+    // Make sure it's not something like "ContactInfo" which could be a deal field
+    // Only match if what follows is a known contact field pattern
+    const afterContact = normalized.slice(7); // Remove "contact"
+    const contactFieldNames = ['name', 'email', 'phone', 'title', 'linkedin', 'mobile', 'cell'];
+    if (contactFieldNames.some(f => afterContact === f || afterContact.startsWith(f))) {
+      return true;
+    }
+  }
+
+  // Check if it exactly matches an exclusive contact keyword
+  if (EXCLUSIVE_CONTACT_KEYWORDS.includes(normalized)) {
+    return true;
+  }
+
+  return false;
+}
 
 export function autoMapContactColumns(
   csvHeaders: string[],
@@ -87,22 +156,40 @@ export function autoMapContactColumns(
   for (const csvColumn of csvHeaders) {
     const normalizedCsvColumn = normalizeFieldName(csvColumn);
 
+    // Strip Contact_ prefix for matching
+    const contactPrefix = 'contact';
+    const strippedColumn = normalizedCsvColumn.startsWith(contactPrefix)
+      ? normalizedCsvColumn.slice(contactPrefix.length)
+      : normalizedCsvColumn;
+
     // Check if this column looks like a contact field
     let matchedField: SchemaField | undefined;
 
-    // Check aliases first
+    // Check aliases first (using stripped column name)
     for (const [fieldName, aliases] of Object.entries(CONTACT_ALIASES)) {
-      if (aliases.some(alias => normalizedCsvColumn.includes(alias) || alias.includes(normalizedCsvColumn))) {
-        matchedField = contactSchemaFields.find(f => f.name === fieldName);
-        break;
+      if (aliases.some(alias =>
+        strippedColumn === alias ||
+        alias === strippedColumn ||
+        normalizedCsvColumn === alias ||
+        alias === normalizedCsvColumn
+      )) {
+        // Try to find this field in the schema by name or label
+        matchedField = contactSchemaFields.find(f =>
+          f.name === fieldName ||
+          normalizeFieldName(f.name) === normalizeFieldName(fieldName) ||
+          normalizeFieldName(f.label) === normalizeFieldName(fieldName)
+        );
+        if (matchedField) break;
       }
     }
 
-    // Try direct match with schema fields
+    // Try direct match with schema fields (using both original and stripped column)
     if (!matchedField) {
       matchedField = contactSchemaFields.find(
         f => normalizeFieldName(f.name) === normalizedCsvColumn ||
-             normalizeFieldName(f.label) === normalizedCsvColumn
+             normalizeFieldName(f.label) === normalizedCsvColumn ||
+             normalizeFieldName(f.name) === strippedColumn ||
+             normalizeFieldName(f.label) === strippedColumn
       );
     }
 
@@ -159,29 +246,54 @@ export interface TemplateOptions {
   includeDescriptionRow?: boolean;
   includeContactFields?: boolean;
   contactSchemaFields?: SchemaField[];
+  simple?: boolean;
 }
 
 export function generateCsvTemplate(
   schemaFields: SchemaField[],
   options: TemplateOptions = {}
 ): string {
-  const { includeDescriptionRow = false, includeContactFields = false, contactSchemaFields = [] } = options;
+  const { includeDescriptionRow = false, includeContactFields = false, contactSchemaFields = [], simple = false } = options;
 
-  // Build headers from deal fields
+  if (simple) {
+    // Use hardcoded simple template fields
+    const dealHeaders = SIMPLE_TEMPLATE_FIELDS.map(f => f.name);
+    const contactHeaders = includeContactFields
+      ? SIMPLE_CONTACT_FIELDS.map(f => `Contact_${f.name}`)
+      : [];
+    const headers = [...dealHeaders, ...contactHeaders];
+
+    const data: string[][] = [];
+    if (includeDescriptionRow) {
+      const dealDescriptions = SIMPLE_TEMPLATE_FIELDS.map(f => {
+        const parts: string[] = [];
+        if (f.label) parts.push(f.label);
+        if (f.required) parts.push('REQUIRED');
+        return parts.join(' | ') || '';
+      });
+      const contactDescriptions = includeContactFields
+        ? SIMPLE_CONTACT_FIELDS.map(f => {
+            const parts: string[] = [];
+            if (f.label) parts.push(f.label);
+            if (f.required) parts.push('REQUIRED');
+            return parts.join(' | ') || '';
+          })
+        : [];
+      data.push([...dealDescriptions, ...contactDescriptions]);
+    }
+
+    return Papa.unparse({ fields: headers, data });
+  }
+
+  // Full template: use schema fields
   const dealHeaders = schemaFields.map(f => f.name);
-
-  // Optionally add contact fields
   const contactHeaders = includeContactFields && contactSchemaFields.length > 0
     ? contactSchemaFields.map(f => `Contact_${f.name}`)
     : [];
-
   const headers = [...dealHeaders, ...contactHeaders];
 
-  // Build data rows
   const data: string[][] = [];
-
   if (includeDescriptionRow) {
-    // Create description row with field info
     const dealDescriptions = schemaFields.map(f => {
       const parts: string[] = [];
       if (f.label !== f.name) parts.push(f.label);
@@ -206,10 +318,7 @@ export function generateCsvTemplate(
     data.push([...dealDescriptions, ...contactDescriptions]);
   }
 
-  return Papa.unparse({
-    fields: headers,
-    data,
-  });
+  return Papa.unparse({ fields: headers, data });
 }
 
 export function downloadCsvTemplate(
