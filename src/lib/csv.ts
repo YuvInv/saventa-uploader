@@ -2,12 +2,12 @@ import Papa from 'papaparse';
 import type { ColumnMapping, ContactColumnMapping, SchemaField } from './types';
 
 // Simple template field definitions (hardcoded for consistency)
+// Note: SourceTypeID, Source (Source Notes), StageID, StatusID, FundID are auto-populated
+// with defaults during upload, so they're excluded from the simple template
 export const SIMPLE_TEMPLATE_FIELDS: Array<{ name: string; label: string; required?: boolean }> = [
   { name: 'CompanyName', label: 'Deal Name', required: true },
   { name: 'Description', label: 'Description' },
   { name: 'Website', label: 'Website' },
-  { name: 'SourceTypeID', label: 'Source Type' },
-  { name: 'SourceNotes', label: 'Source Notes' },
   { name: 'PastInvestments', label: 'Past Investments' },
 ];
 
@@ -21,13 +21,12 @@ export const SIMPLE_CONTACT_FIELDS: Array<{ name: string; label: string; require
 ];
 
 // Deal field aliases for common field name mismatches
+// Note: SourceTypeID and Source are not included here since they're auto-populated with defaults
 const DEAL_ALIASES: Record<string, string[]> = {
   CompanyName: ['companyname', 'dealname', 'company', 'name', 'deal'],
   Description: ['description', 'desc', 'summary', 'about'],
   Website: ['website', 'url', 'site', 'web', 'homepage'],
   PastInvestments: ['pastinvestments', 'investments', 'priorinvestments', 'previousinvestments', 'fundinground', 'funding'],
-  SourceTypeID: ['sourcetypeid', 'sourcetype', 'source', 'leadsource'],
-  SourceNotes: ['sourcenotes', 'sourcedetails', 'sourcedescription'],
 };
 
 export interface ParsedCsv {

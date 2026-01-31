@@ -11,6 +11,7 @@ import { useSevantaApi } from './hooks/useSevantaApi';
 import { useValidation } from './hooks/useValidation';
 import { useDuplicateCheck } from './hooks/useDuplicateCheck';
 import { parseCsv, autoMapColumns, applyMapping, autoMapContactColumns, applyContactMapping, isContactColumn } from '../lib/csv';
+import { applyDealDefaults, applyContactDefaults } from '../lib/defaults';
 import type { Company, ColumnMapping, ContactColumnMapping, UploadProgress as UploadProgressType } from '../lib/types';
 
 type Step = 'upload' | 'map' | 'review' | 'preview' | 'uploading' | 'complete';
@@ -76,6 +77,9 @@ export default function App() {
 
     const mappedData = applyMapping(csvData.rows, columnMappings);
 
+    // Apply deal defaults to each row (only fills missing fields)
+    const enrichedData = mappedData.map(row => applyDealDefaults(row, 'csv'));
+
     // Debug: Log contact column mappings
     console.log('Contact column mappings:', contactColumnMappings);
 
@@ -84,12 +88,17 @@ export default function App() {
       ? applyContactMapping(csvData.rows, contactColumnMappings)
       : csvData.rows.map(() => ({}));
 
+    // Apply contact defaults to each contact (only fills missing fields)
+    const enrichedContactData = contactData.map(contact =>
+      Object.keys(contact).length > 0 ? applyContactDefaults(contact) : contact
+    );
+
     // Debug: Log contact data
-    console.log('Contact data after mapping:', contactData);
+    console.log('Contact data after mapping:', enrichedContactData);
 
     // Create company objects with validation
-    const newCompanies: Company[] = mappedData.map((data, index) => {
-      const contact = contactData[index] as Record<string, string>;
+    const newCompanies: Company[] = enrichedData.map((data, index) => {
+      const contact = enrichedContactData[index] as Record<string, string>;
       const hasContactName = contact && contact.Name;
 
       // Debug: Log each contact
