@@ -1,4 +1,4 @@
-# Saventa Uploader
+# Sevanta Uploader
 
 A Chrome Extension for bulk uploading companies to Sevanta Dealflow CRM.
 
@@ -18,8 +18,8 @@ A Chrome Extension for bulk uploading companies to Sevanta Dealflow CRM.
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/saventa-uploader.git
-   cd saventa-uploader
+   git clone https://github.com/yourusername/sevanta-uploader.git
+   cd sevanta-uploader
    ```
 
 2. Install dependencies:

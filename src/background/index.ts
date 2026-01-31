@@ -219,4 +219,4 @@ chrome.action.onClicked.addListener((tab) => {
 });
 
 // Log when service worker starts
-console.log('Saventa Uploader background service worker started');
+console.log('Sevanta Uploader background service worker started');

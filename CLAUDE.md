@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Saventa Uploader is a Chrome Extension for bulk uploading companies to Sevanta Dealflow CRM. It validates required fields, checks for duplicates, and provides an editable interface before upload.
+Sevanta Uploader is a Chrome Extension for bulk uploading companies to Sevanta Dealflow CRM. It validates required fields, checks for duplicates, and provides an editable interface before upload.
 
 **Key Benefit**: Uses browser session cookies for authentication - no API key needed.
 
@@ -19,7 +19,7 @@ Saventa Uploader is a Chrome Extension for bulk uploading companies to Sevanta D
 ## Project Structure
 
 ```
-saventa-uploader/
+sevanta-uploader/
 ├── src/
 │   ├── sidepanel/          # Side Panel UI entry point
 │   │   ├── index.html      # HTML entry
@@ -157,7 +157,7 @@ npm run build        # Build for production
 
 All tasks, features, and roadmap items are tracked in **two places**:
 - `TODO.md` - Local reference in the repo
-- [GitHub Issues](https://github.com/YuvInv/saventa-uploader/issues) - For tracking and collaboration
+- [GitHub Issues](https://github.com/YuvInv/sevanta-uploader/issues) - For tracking and collaboration
 
 When adding new tasks, update both locations to keep them in sync.
 

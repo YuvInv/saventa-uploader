@@ -1,6 +1,6 @@
 # Test Data Files
 
-These CSV files are for testing the Saventa Uploader extension.
+These CSV files are for testing the Sevanta Uploader extension.
 
 ## Important Notes
 

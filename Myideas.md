@@ -3,7 +3,7 @@ bugs and things to imporve:
 
 
 - Automatic fields:
-    * Source Notes: “uploaded from CSV using Sevanta uploader” / “uploaded from Dealigence using Savant uploader” / uploaded from IVC using saventa uploader
+    * Source Notes: “uploaded from CSV using Sevanta Uploader” / “uploaded from Dealigence using Sevanta Uploader” / uploaded from IVC using Sevanta Uploader
     * DealTypes: should be INV always
     * SourceType should be always “Research” - should choose the right SourceTypeID accordingly
     * 

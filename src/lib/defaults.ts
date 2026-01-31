@@ -5,7 +5,7 @@
 export type UploadSource = 'csv' | 'dealigence' | 'ivc';
 
 const SOURCE_LABELS: Record<UploadSource, string> = {
-  csv: 'Saventa Uploader',
+  csv: 'Sevanta Uploader',
   dealigence: 'Dealigence',
   ivc: 'IVC',
 };

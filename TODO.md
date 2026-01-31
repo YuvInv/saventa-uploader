@@ -1,6 +1,6 @@
-# Saventa Uploader - TODO
+# Sevanta Uploader - TODO
 
-> All tasks are tracked in [GitHub Issues](https://github.com/YuvInv/saventa-uploader/issues)
+> All tasks are tracked in [GitHub Issues](https://github.com/YuvInv/sevanta-uploader/issues)
 
 ## Completed
 
@@ -8,34 +8,24 @@
 - [x] **Contacts/Founders Upload** - CSV can include founder columns, contacts created and linked to deals
 - [x] **CSV Template Download** - Download button with field descriptions and optional contact fields
 - [x] **Side Panel UI** - Modern side panel interface instead of popup
-- [x] **Remove 'View Schema' Option** ([#7](https://github.com/YuvInv/saventa-uploader/issues/7)) - Removed debug feature from UI
-- [x] **Simplified CSV Template** ([#1](https://github.com/YuvInv/saventa-uploader/issues/1)) - Template with commonly used fields only
+- [x] **Remove 'View Schema' Option** ([#7](https://github.com/YuvInv/sevanta-uploader/issues/7)) - Removed debug feature from UI
+- [x] **Simplified CSV Template** ([#1](https://github.com/YuvInv/sevanta-uploader/issues/1)) - Template with commonly used fields only
+- [x] **Fix Contacts Upload** ([#10](https://github.com/YuvInv/sevanta-uploader/issues/10)) - Fixed contact creation and linking to deals
 
 ---
 
 ## Next Up
 
-### 1. Fix Contacts Upload ([#10](https://github.com/YuvInv/saventa-uploader/issues/10)) - Priority: High (Bug)
-Contacts upload is currently failing. Need to investigate schema and API documentation.
-
-**To investigate:**
-- Study the contact schema API response carefully
-- Review contact API documentation
-- Test contact creation with minimal required fields
-- Check if CompanyID linking is working correctly
-
----
-
-### 2. Set Automatic Default Fields ([#8](https://github.com/YuvInv/saventa-uploader/issues/8)) - Priority: High
+### 1. Set Automatic Default Fields ([#8](https://github.com/YuvInv/sevanta-uploader/issues/8)) - Priority: High
 Automatically set default fields when uploading companies:
 
-- **Source Notes**: "Uploaded from CSV using Saventa Uploader" (or Dealigence/IVC variant)
+- **Source Notes**: "Uploaded from CSV using Sevanta Uploader" (or Dealigence/IVC variant)
 - **DealTypes**: Always set to "INV" (map to correct DealTypeID using .schema_examples/ folder)
 - **SourceType**: Always set to "Research" (map to correct SourceTypeID)
 
 ---
 
-### 3. Add Discard Row Option for Duplicates ([#9](https://github.com/YuvInv/saventa-uploader/issues/9)) - Priority: Medium
+### 2. Add Discard Row Option for Duplicates ([#9](https://github.com/YuvInv/sevanta-uploader/issues/9)) - Priority: Medium
 When uploading CSV with companies that already exist:
 
 - Allow users to "discard" individual rows
@@ -44,7 +34,7 @@ When uploading CSV with companies that already exist:
 
 ---
 
-### 4. Dealigence Integration ([#2](https://github.com/YuvInv/saventa-uploader/issues/2)) - Priority: Medium
+### 3. Dealigence Integration ([#2](https://github.com/YuvInv/sevanta-uploader/issues/2)) - Priority: Medium
 Import companies directly from Dealigence platform.
 
 **Approach:**
@@ -65,7 +55,7 @@ Import companies directly from Dealigence platform.
 
 ---
 
-### 5. IVC Integration ([#3](https://github.com/YuvInv/saventa-uploader/issues/3)) - Priority: Medium
+### 4. IVC Integration ([#3](https://github.com/YuvInv/sevanta-uploader/issues/3)) - Priority: Medium
 Import companies directly from IVC (Israel Venture Capital) database.
 
 **Approach:**
@@ -85,12 +75,12 @@ Import companies directly from IVC (Israel Venture Capital) database.
 
 ---
 
-### 6. GitHub CI/CD for Build & Publish ([#4](https://github.com/YuvInv/saventa-uploader/issues/4)) - Priority: Low
+### 5. GitHub CI/CD for Build & Publish ([#4](https://github.com/YuvInv/sevanta-uploader/issues/4)) - Priority: Low
 Set up GitHub Actions to automatically build and publish the extension.
 
 ---
 
-### 7. Additional Enhancements - Priority: Low
+### 6. Additional Enhancements - Priority: Low
 - Progress bar during CSV upload
 - Error handling improvements
 - Changing extension icon to VC logo
@@ -99,7 +89,7 @@ Set up GitHub Actions to automatically build and publish the extension.
 
 ## AI Features (Future)
 
-### 8. Auto-Updates from News ([#5](https://github.com/YuvInv/saventa-uploader/issues/5)) - Priority: Low
+### 7. Auto-Updates from News ([#5](https://github.com/YuvInv/sevanta-uploader/issues/5)) - Priority: Low
 Automatically crawl news sites (Ctech, Geektime) to:
 - Update existing companies with new funding rounds
 - Add new companies with AI-generated summaries
@@ -107,7 +97,7 @@ Automatically crawl news sites (Ctech, Geektime) to:
 
 ---
 
-### 9. AI Features: Company Enrichment ([#6](https://github.com/YuvInv/saventa-uploader/issues/6)) - Priority: Low
+### 8. AI Features: Company Enrichment ([#6](https://github.com/YuvInv/sevanta-uploader/issues/6)) - Priority: Low
 Integrate with Perplexity (or similar) for:
 - Auto-enrichment of company profiles (funding, founders, history)
 - AI-driven CRM updates for outdated/missing data
