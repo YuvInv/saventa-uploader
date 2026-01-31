@@ -28,7 +28,8 @@ export interface Contact {
   id?: string;
   Name: string;
   Email?: string;
-  Phone?: string;
+  MobilePhone?: string; // Correct API field name (alternatives: HomePhone, WorkPhone)
+  Title?: string;
   CompanyID?: string; // Link to deal
   ContactTypeID?: string; // e.g., "MGT" for management, "SRC" for source
   [key: string]: string | number | boolean | undefined;

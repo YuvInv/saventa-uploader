@@ -338,6 +338,10 @@ interface CreateDealResponse {
   error?: string;
   id?: string;
   CompanyID?: number;
+  data?: {
+    CompanyID?: string | number;
+    [key: string]: unknown;
+  };
   deal?: { id: string };
   [key: string]: unknown;
 }
@@ -376,10 +380,12 @@ export async function createDeal(
     }
 
     // Check for success indicators
-    if (result.status === 'ok' || result.CompanyID || result.id) {
+    if (result.status === 'ok' || result.CompanyID || result.data?.CompanyID || result.id) {
+      // CompanyID can be at top level or inside data object
+      const companyId = result.CompanyID?.toString() || result.data?.CompanyID?.toString();
       return {
         success: true,
-        dealId: result.CompanyID?.toString() || result.id || result.deal?.id,
+        dealId: companyId || result.id || result.deal?.id,
       };
     }
 

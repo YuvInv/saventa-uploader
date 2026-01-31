@@ -15,6 +15,10 @@ export function UploadPreview({ companies, onConfirm, onCancel }: UploadPreviewP
     c => c.validation.valid && !c.duplicate?.isDuplicate && c.uploadStatus === 'pending'
   );
 
+  const companiesWithContacts = validCompanies.filter(
+    c => c.contactData && c.contactData.Name
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -34,7 +38,15 @@ export function UploadPreview({ companies, onConfirm, onCancel }: UploadPreviewP
           <div>
             <h3 className="font-medium text-yellow-800">Review Before Upload</h3>
             <p className="text-sm text-yellow-700 mt-1">
-              This will create <strong>{validCompanies.length}</strong> new records in your CRM.
+              This will create <strong>{validCompanies.length}</strong> new deal{validCompanies.length !== 1 ? 's' : ''} in your CRM.
+              {companiesWithContacts.length > 0 && (
+                <>
+                  <br />
+                  <span className="text-purple-700">
+                    <strong>{companiesWithContacts.length}</strong> contact{companiesWithContacts.length !== 1 ? 's' : ''} will be created and linked to deal{companiesWithContacts.length !== 1 ? 's' : ''}.
+                  </span>
+                </>
+              )}
               <br />
               Please review the data below carefully before proceeding.
             </p>
@@ -44,8 +56,11 @@ export function UploadPreview({ companies, onConfirm, onCancel }: UploadPreviewP
 
       {/* API Endpoint Info */}
       <div className="bg-gray-50 border rounded p-3 text-xs font-mono">
-        <div className="text-gray-500 mb-1">Endpoint:</div>
+        <div className="text-gray-500 mb-1">Endpoints:</div>
         <div>POST https://run.mydealflow.com/inv/api/deal/add</div>
+        {companiesWithContacts.length > 0 && (
+          <div className="text-purple-600">POST https://run.mydealflow.com/inv/api/contact/add</div>
+        )}
       </div>
 
       {/* Companies to Upload */}
@@ -60,16 +75,32 @@ export function UploadPreview({ companies, onConfirm, onCancel }: UploadPreviewP
                 onClick={() => setExpandedId(expandedId === company.id ? null : company.id)}
                 className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50 text-left"
               >
-                <span className="text-sm">
-                  <span className="text-gray-500 mr-2">#{index + 1}</span>
+                <span className="text-sm flex items-center gap-2">
+                  <span className="text-gray-500">#{index + 1}</span>
                   <strong>{company.data.CompanyName || '(no name)'}</strong>
+                  {company.contactData && company.contactData.Name && (
+                    <span className="px-1.5 py-0.5 bg-purple-100 text-purple-700 text-xs rounded">
+                      +contact
+                    </span>
+                  )}
                 </span>
                 <span className="text-gray-400">{expandedId === company.id ? '▼' : '▶'}</span>
               </button>
 
               {expandedId === company.id && (
-                <div className="border-t bg-gray-900 text-green-400 p-3 text-xs font-mono overflow-x-auto">
-                  <pre>{JSON.stringify(company.data, null, 2)}</pre>
+                <div className="border-t bg-gray-900 p-3 text-xs font-mono overflow-x-auto space-y-2">
+                  <div>
+                    <div className="text-gray-400 mb-1">Deal Data:</div>
+                    <pre className="text-green-400">{JSON.stringify(company.data, null, 2)}</pre>
+                  </div>
+                  {company.contactData && Object.keys(company.contactData).length > 0 ? (
+                    <div>
+                      <div className="text-gray-400 mb-1">Contact Data (will be linked to deal):</div>
+                      <pre className="text-purple-400">{JSON.stringify(company.contactData, null, 2)}</pre>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500 italic">No contact data mapped</div>
+                  )}
                 </div>
               )}
             </div>

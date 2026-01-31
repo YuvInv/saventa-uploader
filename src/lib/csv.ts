@@ -12,10 +12,11 @@ export const SIMPLE_TEMPLATE_FIELDS: Array<{ name: string; label: string; requir
 ];
 
 // Contact fields for simple template
+// Note: Using MobilePhone - Sevanta API accepts HomePhone, MobilePhone, WorkPhone
 export const SIMPLE_CONTACT_FIELDS: Array<{ name: string; label: string; required?: boolean }> = [
   { name: 'Name', label: 'Contact Name' },
   { name: 'Email', label: 'Email' },
-  { name: 'Phone', label: 'Phone' },
+  { name: 'MobilePhone', label: 'Phone' },
   { name: 'Title', label: 'Title' },
 ];
 
@@ -108,18 +109,19 @@ function normalizeFieldName(name: string): string {
 }
 
 // Common aliases for contact fields
+// Note: Using MobilePhone as the phone field - Sevanta API accepts HomePhone, MobilePhone, WorkPhone
+// Note: LinkedIn field is not available in Sevanta contact schema
 const CONTACT_ALIASES: Record<string, string[]> = {
   Name: ['name', 'founder', 'foundername', 'contactname', 'ceoname', 'ceo', 'contact', 'person', 'foundercontact'],
   Email: ['email', 'founderemail', 'contactemail', 'ceoemail', 'emailaddress'],
-  Phone: ['phone', 'founderphone', 'contactphone', 'ceophone', 'phonenumber', 'mobile', 'cell'],
+  MobilePhone: ['phone', 'founderphone', 'contactphone', 'ceophone', 'phonenumber', 'mobile', 'cell', 'mobilephone'],
   Title: ['title', 'foundertitle', 'contacttitle', 'jobtitle', 'position', 'role'],
-  LinkedIn: ['linkedin', 'founderlinkedin', 'contactlinkedin', 'linkedinurl'],
 };
 
 // Exclusive contact keywords that clearly indicate a contact column (not generic fields)
 const EXCLUSIVE_CONTACT_KEYWORDS = [
-  'founder', 'foundername', 'founderphone', 'founderemail', 'foundertitle', 'founderlinkedin',
-  'contactname', 'contactphone', 'contactemail', 'contacttitle', 'contactlinkedin',
+  'founder', 'foundername', 'founderphone', 'founderemail', 'foundertitle',
+  'contactname', 'contactphone', 'contactemail', 'contacttitle', 'contactmobilephone',
   'ceoname', 'ceophone', 'ceoemail',
 ];
 

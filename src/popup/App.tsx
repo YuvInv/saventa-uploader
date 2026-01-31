@@ -36,9 +36,16 @@ export default function App() {
     }
     setCsvData({ headers: parsed.headers, rows: parsed.rows });
 
+    // Debug: Log all headers
+    console.log('CSV headers:', parsed.headers);
+
     // Separate headers into deal columns vs contact columns
     const contactHeaders = parsed.headers.filter(h => isContactColumn(h));
     const dealHeaders = parsed.headers.filter(h => !isContactColumn(h));
+
+    // Debug: Log which headers were detected as contact columns
+    console.log('Contact headers detected:', contactHeaders);
+    console.log('Deal headers:', dealHeaders);
 
     // Auto-map deal columns (only non-contact columns)
     if (schema) {
@@ -54,7 +61,10 @@ export default function App() {
     // Auto-map contact columns
     if (contactSchema) {
       const contactMappings = autoMapContactColumns(contactHeaders, contactSchema.fields);
+      console.log('Auto-mapped contact columns:', contactMappings);
       setContactColumnMappings(contactMappings);
+    } else {
+      console.warn('Contact schema not loaded yet - contact columns will not be auto-mapped');
     }
 
     setStep('map');
@@ -66,15 +76,27 @@ export default function App() {
 
     const mappedData = applyMapping(csvData.rows, columnMappings);
 
+    // Debug: Log contact column mappings
+    console.log('Contact column mappings:', contactColumnMappings);
+
     // Apply contact mapping if any contact columns are mapped
     const contactData = contactColumnMappings.length > 0
       ? applyContactMapping(csvData.rows, contactColumnMappings)
       : csvData.rows.map(() => ({}));
 
+    // Debug: Log contact data
+    console.log('Contact data after mapping:', contactData);
+
     // Create company objects with validation
     const newCompanies: Company[] = mappedData.map((data, index) => {
       const contact = contactData[index] as Record<string, string>;
       const hasContactName = contact && contact.Name;
+
+      // Debug: Log each contact
+      if (Object.keys(contact).length > 0) {
+        console.log(`Row ${index} contact:`, contact, 'hasName:', hasContactName);
+      }
+
       return {
         id: `company-${index}-${Date.now()}`,
         data,
@@ -152,6 +174,7 @@ export default function App() {
 
       // Log to console for debugging
       console.log('Uploading company:', company.data);
+      console.log('Company contact data:', company.contactData);
 
       try {
         const response = await chrome.runtime.sendMessage({
@@ -159,13 +182,20 @@ export default function App() {
           data: company.data,
         });
 
-        console.log('Upload response:', response);
+        console.log('Create deal response:', response);
 
         if (response.success) {
           const dealId = response.data?.dealId;
 
           // Create contact if we have contact data and a deal ID
           let createdContactId: string | undefined;
+          console.log('Checking contact creation:', {
+            dealId,
+            hasContactData: !!company.contactData,
+            contactData: company.contactData,
+            hasName: company.contactData?.Name,
+          });
+
           if (dealId && company.contactData && company.contactData.Name) {
             console.log('Creating contact for deal:', dealId, company.contactData);
             try {
