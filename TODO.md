@@ -15,14 +15,22 @@
 
 ---
 
+---
+
 ## Next Up
 
-### 1. Add Discard Row Option for Duplicates ([#9](https://github.com/YuvInv/sevanta-uploader/issues/9)) - Priority: High
-When uploading CSV with companies that already exist:
+### 2. Allow Optional Contacts ([#11](https://github.com/YuvInv/sevanta-uploader/issues/11)) - Priority: High
+- Currently, if contact columns are mapped, we might be enforcing valid contact data.
+- **Requirement:** If contact fields are empty in the CSV for a row, simpler allow the company upload without creating a contact.
+- Don't fail validation just because contact name is missing if the user didn't intend to add one.
 
-- Allow users to "discard" individual rows
-- Do NOT allow editing of existing companies through the extension
-- Clear UI indication of which rows will be skipped
+### 3. Support Multiple Contacts per Company ([#12](https://github.com/YuvInv/sevanta-uploader/issues/12)) - Priority: High
+- **Problem:** Current row-based CSV structure implies 1 contact per row/company.
+- **Requirement:** Allow uploading multiple contacts for the same company.
+- **Proposed Solution:** 
+  - Allow multiple rows with the same `CompanyName`. 
+  - The first row creates/updates the company.
+  - Subsequent rows with the same `CompanyName` add additional contacts to that existing deal.
 
 ---
 
