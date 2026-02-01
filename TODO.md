@@ -11,21 +11,13 @@
 - [x] **Remove 'View Schema' Option** ([#7](https://github.com/YuvInv/sevanta-uploader/issues/7)) - Removed debug feature from UI
 - [x] **Simplified CSV Template** ([#1](https://github.com/YuvInv/sevanta-uploader/issues/1)) - Template with commonly used fields only
 - [x] **Fix Contacts Upload** ([#10](https://github.com/YuvInv/sevanta-uploader/issues/10)) - Fixed contact creation and linking to deals
+- [x] **Set Automatic Default Fields** ([#8](https://github.com/YuvInv/sevanta-uploader/issues/8)) - Auto-populate Source Notes, DealTypes, and SourceType
 
 ---
 
 ## Next Up
 
-### 1. Set Automatic Default Fields ([#8](https://github.com/YuvInv/sevanta-uploader/issues/8)) - Priority: High
-Automatically set default fields when uploading companies:
-
-- **Source Notes**: "Uploaded from CSV using Sevanta Uploader" (or Dealigence/IVC variant)
-- **DealTypes**: Always set to "INV" (map to correct DealTypeID using .schema_examples/ folder)
-- **SourceType**: Always set to "Research" (map to correct SourceTypeID)
-
----
-
-### 2. Add Discard Row Option for Duplicates ([#9](https://github.com/YuvInv/sevanta-uploader/issues/9)) - Priority: Medium
+### 1. Add Discard Row Option for Duplicates ([#9](https://github.com/YuvInv/sevanta-uploader/issues/9)) - Priority: High
 When uploading CSV with companies that already exist:
 
 - Allow users to "discard" individual rows
@@ -34,7 +26,7 @@ When uploading CSV with companies that already exist:
 
 ---
 
-### 3. Dealigence Integration ([#2](https://github.com/YuvInv/sevanta-uploader/issues/2)) - Priority: Medium
+### 2. Dealigence Integration ([#2](https://github.com/YuvInv/sevanta-uploader/issues/2)) - Priority: Medium
 Import companies directly from Dealigence platform.
 
 **Approach:**
@@ -55,7 +47,7 @@ Import companies directly from Dealigence platform.
 
 ---
 
-### 4. IVC Integration ([#3](https://github.com/YuvInv/sevanta-uploader/issues/3)) - Priority: Medium
+### 3. IVC Integration ([#3](https://github.com/YuvInv/sevanta-uploader/issues/3)) - Priority: Medium
 Import companies directly from IVC (Israel Venture Capital) database.
 
 **Approach:**
@@ -75,12 +67,12 @@ Import companies directly from IVC (Israel Venture Capital) database.
 
 ---
 
-### 5. GitHub CI/CD for Build & Publish ([#4](https://github.com/YuvInv/sevanta-uploader/issues/4)) - Priority: Low
+### 4. GitHub CI/CD for Build & Publish ([#4](https://github.com/YuvInv/sevanta-uploader/issues/4)) - Priority: Low
 Set up GitHub Actions to automatically build and publish the extension.
 
 ---
 
-### 6. Additional Enhancements - Priority: Low
+### 5. Additional Enhancements - Priority: Low
 - Progress bar during CSV upload
 - Error handling improvements
 - Changing extension icon to VC logo
@@ -89,7 +81,7 @@ Set up GitHub Actions to automatically build and publish the extension.
 
 ## AI Features (Future)
 
-### 7. Auto-Updates from News ([#5](https://github.com/YuvInv/sevanta-uploader/issues/5)) - Priority: Low
+### 6. Auto-Updates from News ([#5](https://github.com/YuvInv/sevanta-uploader/issues/5)) - Priority: Low
 Automatically crawl news sites (Ctech, Geektime) to:
 - Update existing companies with new funding rounds
 - Add new companies with AI-generated summaries
@@ -97,7 +89,7 @@ Automatically crawl news sites (Ctech, Geektime) to:
 
 ---
 
-### 8. AI Features: Company Enrichment ([#6](https://github.com/YuvInv/sevanta-uploader/issues/6)) - Priority: Low
+### 7. AI Features: Company Enrichment ([#6](https://github.com/YuvInv/sevanta-uploader/issues/6)) - Priority: Low
 Integrate with Perplexity (or similar) for:
 - Auto-enrichment of company profiles (funding, founders, history)
 - AI-driven CRM updates for outdated/missing data
